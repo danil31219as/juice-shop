@@ -14,12 +14,13 @@ import * as challengeUtils from '../lib/challengeUtils'
 export function servePublicFiles () {
   return ({ params, query }: Request, res: Response, next: NextFunction) => {
     const file = params.file
+    const safeFile = path.basename(file)
 
-    if (!file.includes('/')) {
-      verify(file, res, next)
+    if (file === safeFile && !file.includes('/') && !file.includes('\\')) {
+      verify(safeFile, res, next)
     } else {
       res.status(403)
-      next(new Error('File names cannot contain forward slashes!'))
+      next(new Error('File names cannot contain path separators!'))
     }
   }
 
@@ -30,7 +31,7 @@ export function servePublicFiles () {
       challengeUtils.solveIf(challenges.directoryListingChallenge, () => { return file.toLowerCase() === 'acquisitions.md' })
       verifySuccessfulPoisonNullByteExploit(file)
 
-      res.sendFile(path.resolve('ftp/', file))
+      res.sendFile(file, { root: path.resolve('ftp') })
     } else {
       res.status(403)
       next(new Error('Only .md and .pdf files are allowed!'))
